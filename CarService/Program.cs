@@ -9,16 +9,27 @@ namespace CarService
         static void Main()
         {
             WorkAutoService workAutoService = new WorkAutoService();
-            workAutoService.StartWork();
+            workAutoService.Work();
         }
     }
 
     class WorkAutoService
     {
-        private AutoService _autoService = new AutoService();
         private Queue<Client> _clients = new Queue<Client>();
+        private Storage _storage;
+        private int _priceRepair;
+        private int _punishment;
+        private int _money;
 
-        public void StartWork()
+        public WorkAutoService()
+        {
+            _storage = new Storage();
+            _money = 1000;
+            _priceRepair = 100;
+            _punishment = 20;
+        }
+
+        public void Work()
         {
             const int CommandClient = 1;
             const int CommandStorage = 2;
@@ -33,17 +44,18 @@ namespace CarService
             while (isWork == true)
             {
                 CreateClient();
-                _autoService.ShowBalance();
+                ShowBalance();
                 Console.WriteLine($"Для начала работы с клиентом напишите {CommandClient},\nДля того посмотреть какие есть детали на складе {CommandStorage}.");
+                int.TryParse(Console.ReadLine(), out int result);
 
-                switch (Convert.ToInt32(Console.ReadLine()))
+                switch (result)
                 {
                     case CommandClient:
                         ServiceClient();
                         break;
 
                     case CommandStorage:
-                        _autoService.ShowDetailsStorage();
+                        ShowDetailsStorage();
                         break;
 
                     default:
@@ -61,55 +73,18 @@ namespace CarService
             }
         }
 
-        private void CreateClient()
-        {
-            List<Detail> brokenDetails = new List<Detail>()
-                {
-                    new Glass("Сломано Лобовое Окно", 0),
-                    new Headlights("Разбита одна Фара", 0),
-                    new TurnSignals("Отломались Поворотники", 0),
-                    new Tires("Проколоты Шины", 0),
-                    new DoorLock("Дверь пытались взломать сломали Замок", 0)
-                };
-            Random random = new Random();
-            List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
-            string nameClient = namesClients[random.Next(namesClients.Count)];
-            _clients.Enqueue(new Client(nameClient, brokenDetails[random.Next(brokenDetails.Count)]));
-        }
-
-        private void ServiceClient()
-        {
-            _autoService.ServiceClient(_clients.Dequeue());
-        }
-    }
-
-    class AutoService
-    {
-        private Storage _storage;
-        private int _priceRepair;
-        private int _punishment;
-        private int _money;
-
-        public AutoService()
-        {
-            _storage = new Storage();
-            _money = 1000;
-            _priceRepair = 100;
-            _punishment = 20;
-        }
-
-        public void ServiceClient(Client autoClient)
+        private void ServiceClient(Client autoClient)
         {
             autoClient.ShowInfo();
             RepairCar(autoClient);
         }
 
-        public void ShowBalance()
+        private void ShowBalance()
         {
             Console.WriteLine($"Ваш баланс на предприятии {_money} $");
         }
 
-        public void ShowDetailsStorage()
+        private void ShowDetailsStorage()
         {
             _storage.ShowDetails();
         }
@@ -136,7 +111,7 @@ namespace CarService
                 {
                     Console.WriteLine($"Цена  детали - {_storage.PriceDetail(numberDetail)}, цена ремонта {_priceRepair}");
 
-                    if (autoClient.CorrectReplaceDetail(_storage.GetOneDetail(numberDetail)))
+                    if (autoClient.CorrectReplace(_storage.GetOneDetail(numberDetail)))
                     {
                         int amountCost = _priceRepair + _storage.PriceDetail(numberDetail);
                         Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
@@ -164,11 +139,31 @@ namespace CarService
                 Console.ReadKey();
             }
         }
+
+        private void CreateClient()
+        {
+            List<Detail> brokenDetails = new List<Detail>()
+                {
+                    new Glass("Сломано Лобовое Окно", 0),
+                    new Headlights("Разбита одна Фара", 0),
+                    new TurnSignals("Отломались Поворотники", 0),
+                    new Tires("Проколоты Шины", 0),
+                    new DoorLock("Дверь пытались взломать сломали Замок", 0)
+                };
+            Random random = new Random();
+            List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
+            string nameClient = namesClients[random.Next(namesClients.Count)];
+            _clients.Enqueue(new Client(nameClient, brokenDetails[random.Next(brokenDetails.Count)]));
+        }
+
+        private void ServiceClient()
+        {
+            ServiceClient(_clients.Dequeue());
+        }
     }
 
     class Client
     {
-        private bool _isCorrectReplaceDetail;
         private Detail _problemDetail;
 
         public Client(string _name, Detail problemDetail)
@@ -179,21 +174,18 @@ namespace CarService
 
         public string Name { get; private set; }
 
-        public bool CorrectReplaceDetail(Detail detail)
+        public bool CorrectReplace(Detail detail)
         {
             if (detail.NameProblem == _problemDetail.NameProblem)
             {
-                _isCorrectReplaceDetail = true;
                 Console.WriteLine("Автомеханик заменил на правильную деталь");
+                return true;
             }
             else
             {
-                _isCorrectReplaceDetail = false;
                 Console.WriteLine("Автомеханик заменил на не правильную деталь");
+                return false;
             }
-
-            _problemDetail = detail;
-            return _isCorrectReplaceDetail;
         }
 
         public void ShowInfo()
