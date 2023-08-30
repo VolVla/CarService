@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace CarService
 {
@@ -10,7 +12,8 @@ namespace CarService
             const int ServiceClient = 1;
             const int CheckStorage = 2;
             const int BuyDetails = 3;
-            ConsoleKey exitButton = ConsoleKey.F;
+            const int ExitProgram = 4;
+
             bool isWork = true;
             AutoService autoService = new AutoService();
             Console.WriteLine("Для начало работы автосервиса нажмите на любую клавишу");
@@ -19,7 +22,8 @@ namespace CarService
 
             while (isWork)
             {
-                Console.WriteLine($"Ваш баланс - {autoService.Money}\nДля начала работы с клиентом напишите {ServiceClient}, для того посмотреть какие есть детали на складе {CheckStorage},для покупки деталей {BuyDetails}");
+                autoService.ShowBalance();
+                Console.WriteLine($"Для начала работы с клиентом напишите {ServiceClient},\nДля того посмотреть какие есть детали на складе {CheckStorage}\nДля покупки деталей {BuyDetails}\nВы хотите выйти из программы?Нажмите {ExitProgram}.");
                 int.TryParse(Console.ReadLine(), out int result);
 
                 switch (result)
@@ -33,23 +37,21 @@ namespace CarService
                     case BuyDetails:
                         autoService.BuyDetailsStorage();
                         break;
+                    case ExitProgram:
+                        isWork = false;
+                        break;
                     default:
                         Console.WriteLine("Выбрана не существующая команда");
                         break;
                 }
 
-                Console.WriteLine($"\nВы хотите выйти из программы?Нажмите {exitButton}.\nДля продолжение работы нажмите любую другую клавишу");
-
-                if (Console.ReadKey().Key == exitButton)
-                {
-                    Console.WriteLine("Вы вышли из программы");
-                    isWork = false;
-                }
-
                 Console.Clear();
             }
+
+            Console.WriteLine("Вы вышли из программы");
         }
     }
+
     interface IDetail
     {
         int Cost { get; }
@@ -60,15 +62,18 @@ namespace CarService
 
     class AutoService
     {
+        private Storage _storage;
         private List<string> _namesClients;
         private List<string> _problemsClients;
-        private Storage _storage;
+        private List<Detail> _detailsList;
         private int _priceRepair;
         private int _punishment;
+        private int Money;
 
         public AutoService()
         {
-            _storage = new Storage(this);
+            _storage = new Storage();
+            _detailsList = new List<Detail>();
             _namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
             _problemsClients = new List<string>() { "Сломано Лобовое Окно", "Разбита одна Фара", "Отломались Поворотники", "Проколоты Шины", "Дверь пытались взломать сломали Замок", };
             Money = 1000;
@@ -76,49 +81,69 @@ namespace CarService
             _punishment = 20;
         }
 
-        public int Money { get; private set; }
-
         public void WorkClients()
         {
-            Client autoClient = new Client(_namesClients, _problemsClients);
+            Random random = new Random();
+            int firstProblemClient = 0;
+            int numberProblemClient = random.Next(firstProblemClient, _problemsClients.Count + 1);
+            string nameProblem = _problemsClients[numberProblemClient];
+            int numberNameClient = random.Next(firstProblemClient, _namesClients.Count + 1);
+            string name = _namesClients[numberNameClient];
+            Client autoClient = new Client(name, nameProblem);
             autoClient.ShowInfo();
             RemonteAuto(autoClient);
         }
 
         public void BuyDetailsStorage()
         {
-            _storage.BuyDetail();
+            _storage.BuyDetail(ref Money);
+            _detailsList = _storage.ReturnCopyList();
         }
 
         public void ShowDetailStorage()
         {
-            _storage.ShowDetails();
+            for (int i = 0; i < _detailsList.Count; i++)
+            {
+                Console.WriteLine($"Номер {i + 1} лежащей на складе детали, тип детали {_detailsList[i].CreateDetail().Name}");
+            }
+
+            Console.WriteLine("Для продолжения нажмите на любую кнопку");
+            Console.ReadKey();
+        }
+
+        public void ShowBalance()
+        {
+            Console.WriteLine($"Ваш баланс на предприятии {Money} $");
+        }
+
+        private void TakeMoney(int money)
+        {
+            Money -= money;
         }
 
         private void RemonteAuto(Client autoClient)
         {
             ShowDetailStorage();
-
             Console.WriteLine("Выберете деталь  для починки авто");
             int.TryParse(Console.ReadLine(), out int numberDetail);
 
-            if (_storage.DetailsList.Count > 0)
+            if (_detailsList.Count > 0)
             {
-                Console.WriteLine($"Цена  детали - {_storage.DetailsList[numberDetail - 1].Detail().Cost}, цена ремонта {_priceRepair}");
+                Console.WriteLine($"Цена  детали - {_detailsList[numberDetail - 1].CreateDetail().Cost}, цена ремонта {_priceRepair}");
 
-                if (_storage.DetailsList[numberDetail - 1].Detail().ProblemClient == autoClient.NameProblem)
+                if (autoClient.ReplaceDetail(_detailsList[numberDetail - 1].CreateDetail().ProblemClient))
                 {
-                    int amountCost = _priceRepair + _storage.DetailsList[numberDetail - 1].Detail().Cost;
+                    int amountCost = _priceRepair + _detailsList[numberDetail - 1].CreateDetail().Cost;
                     Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
                     Money += amountCost;
-                    _storage.DetailsList.RemoveAt(numberDetail - 1);
+                    _detailsList.RemoveAt(numberDetail - 1);
                     Console.WriteLine("Поздравляю довольный клиент");
                 }
                 else
                 {
-                    TakeMoney(_storage.DetailsList[numberDetail - 1].Detail().Cost);
-                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.DetailsList[numberDetail - 1].Detail().Cost}$");
-                    _storage.DetailsList.RemoveAt(numberDetail - 1);
+                    TakeMoney(_detailsList[numberDetail - 1].CreateDetail().Cost);
+                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_detailsList[numberDetail - 1].CreateDetail().Cost}$");
+                    _detailsList.RemoveAt(numberDetail - 1);
                 }
             }
             else
@@ -127,29 +152,36 @@ namespace CarService
                 TakeMoney(_punishment);
             }
         }
-
-        public void TakeMoney(int money)
-        {
-            Money -= money;
-        }
     }
 
     class Client
     {
-        private Random _random = new Random();
+        private bool _isCorrectReplaceDetail;
 
-        public Client(List<string> _names, List<string> _problems)
+        public Client(string _name, string _problem)
         {
-            int firstProblemClient = 0;
-            int numberProblemClient;
-            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
-            NameProblem = _problems[numberProblemClient];
-            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
-            Name = _names[numberProblemClient];
+            Name = _name;
+            NameProblem = _problem;
         }
 
         public string Name { get; private set; }
         public string NameProblem { get; private set; }
+
+        public bool ReplaceDetail(string Detail)
+        {
+            if (Detail == NameProblem)
+            {
+                _isCorrectReplaceDetail = true;
+                Console.WriteLine("Автомеханик заменил на правильную деталь");
+            }
+            else
+            {
+                _isCorrectReplaceDetail = false;
+                Console.WriteLine("Автомеханик заменил на не правильную деталь");
+            }
+
+            return _isCorrectReplaceDetail;
+        }
 
         public void ShowInfo()
         {
@@ -159,48 +191,54 @@ namespace CarService
 
     class Storage
     {
-        public List<Details> DetailsList;
-        private const int _NumberDetailFirst = 1;
-        private const int _NumberDetailSecond = 2;
-        private const int _NumberDetailThird = 3;
-        private const int _NumberDetailFourth = 4;
-        private const int _NumberDetailFifth = 5;
-        private List<Details> _catalogDetails;
-        private AutoService _autoService;
+        private const int NumberDetailFirst = 1;
+        private const int NumberDetailSecond = 2;
+        private const int NumberDetailThird = 3;
+        private const int NumberDetailFourth = 4;
+        private const int NumberDetailFifth = 5;
 
-        public Storage(AutoService autoService)
+        private List<Detail> _detailsList;
+        private List<Detail> _catalogDetails;
+
+        public Storage()
         {
-            _autoService = autoService;
-            DetailsList = new List<Details>();
-            _catalogDetails = new List<Details>()
+            _detailsList = new List<Detail>();
+            _catalogDetails = new List<Detail>()
             {
-               GetFactory(_NumberDetailFirst),
-               GetFactory(_NumberDetailSecond),
-               GetFactory(_NumberDetailThird),
-               GetFactory(_NumberDetailFourth),
-               GetFactory(_NumberDetailFifth)
+               GetDetail(NumberDetailFirst),
+               GetDetail(NumberDetailSecond),
+               GetDetail(NumberDetailThird),
+               GetDetail(NumberDetailFourth),
+               GetDetail(NumberDetailFifth)
             };
         }
 
-        public void BuyDetail()
+        public List<Detail> ReturnCopyList()
+        {
+            List<Detail> details = new List<Detail>(_detailsList);
+            return details;
+        }
+
+        public void BuyDetail(ref int Money)
         {
             bool isWork = true;
             ConsoleKey exitButton = ConsoleKey.P;
 
             while (isWork)
             {
+                Console.WriteLine($"Ваш баланс - {Money}");
                 ShowCatalogDetails();
                 int.TryParse(Console.ReadLine(), out int numberDetail);
 
-                if (numberDetail > 0 && _catalogDetails.Count > numberDetail)
+                if (numberDetail > 0 && _catalogDetails.Count >= numberDetail)
                 {
-                    Details details = GetFactory(numberDetail);
+                    Detail details = GetDetail(numberDetail);
 
-                    if (BuyAbilityDetail(_autoService.Money, details))
+                    if (BuyAbilityDetail(Money, details))
                     {
-                        IDetail detail = details.Detail();
-                        _autoService.TakeMoney(detail.Cost);
-                        DetailsList.Add(details);
+                        IDetail detail = details.CreateDetail();
+                        Money -= detail.Cost;
+                        _detailsList.Add(details);
                     }
 
                     Console.WriteLine($"\nДля того чтобы закончить покупку деталей нажмите {exitButton}.\nДля продолжение работы нажмите любую другую клавишу");
@@ -215,38 +253,30 @@ namespace CarService
                 }
                 else
                 {
-                    Console.WriteLine("Введено неыерное значение");
+                    Console.WriteLine("Введено неверное значение");
                 }
             }
         }
 
-        public void ShowDetails()
+        private Detail GetDetail(int numberDetailType)
         {
-            for (int i = 0; i < DetailsList.Count; i++)
-            {
-                Console.WriteLine($"Номер {i + 1} лежащей на складе детали, тип детали {DetailsList[i].Detail().Name}");
-            }
-        }
-
-        private Details GetFactory(int numberDetailType)
-        {
-            Details detail;
+            Detail detail;
 
             switch (numberDetailType)
             {
-                case _NumberDetailFirst:
+                case NumberDetailFirst:
                     detail = new FactoryGlass(1, 100, "Стекло", "Сломано Лобовое Окно");
                     break;
-                case _NumberDetailSecond:
+                case NumberDetailSecond:
                     detail = new FactoryHeadlights(2, 20, "Фары", "Разбита одна Фара");
                     break;
-                case _NumberDetailThird:
+                case NumberDetailThird:
                     detail = new FactoryTurnSignals(3, 40, "Поворотники", "Отломались Поворотники");
                     break;
-                case _NumberDetailFourth:
+                case NumberDetailFourth:
                     detail = new FactoryTires(4, 120, "Шины", "Проколоты Шины");
                     break;
-                case _NumberDetailFifth:
+                case NumberDetailFifth:
                     detail = new FactoryDoorLock(5, 60, "Замок", "Дверь пытались взломать сломали Замок");
                     break;
                 default:
@@ -257,18 +287,18 @@ namespace CarService
             return detail;
         }
 
-        private bool BuyAbilityDetail(int money, Details details)
+        private bool BuyAbilityDetail(int money, Detail details)
         {
             bool isResult;
 
-            if (details.Detail().Cost <= money)
+            if (details.CreateDetail().Cost <= money)
             {
-                Console.WriteLine($"Поздравляю вы купили деталь за {details.Detail().Cost}, у вас осталось {money} $");
+                Console.WriteLine($"Поздравляю вы купили деталь за {details.CreateDetail().Cost}, у вас осталось {money} $");
                 isResult = true;
             }
             else
             {
-                Console.WriteLine($"Извините деталь стоит {details.Detail().Cost}, а у вас в наличии {money} $"); ;
+                Console.WriteLine($"Извините деталь стоит {details.CreateDetail().Cost}, а у вас в наличии {money} $"); ;
                 isResult = false;
             }
 
@@ -279,126 +309,105 @@ namespace CarService
         {
             foreach (var numberDetail in _catalogDetails)
             {
-                Console.WriteLine($"Номер детали в каталоге - {numberDetail.Detail().Id},тип детали в каталоге - {numberDetail.Detail().Name}");
+                Console.WriteLine($"Номер детали в каталоге - {numberDetail.CreateDetail().Id},тип детали в каталоге - {numberDetail.CreateDetail().Name}");
             }
         }
     }
 
-    abstract class Details
+    abstract class Detail
     {
-        public abstract IDetail Detail();
+        protected int Cost { get; set; }
+        protected int Id { get; set; }
+        protected string Name { get; set; }
+        protected string ProblemClient { get; set; }
+
+        public abstract IDetail CreateDetail();
     }
 
-    class FactoryGlass : Details
+    class FactoryGlass : Detail
     {
-        private readonly int _cost;
-        private readonly string _name;
-        private readonly string _problemClient;
-        private readonly int _idDetail;
-
         public FactoryGlass(int id, int cost, string name, string problemClient)
         {
-            _cost = cost;
-            _name = name;
-            _problemClient = problemClient;
-            _idDetail = id;
+            Cost = cost;
+            Name = name;
+            ProblemClient = problemClient;
+            Id = id;
         }
 
-        public override IDetail Detail()
+        public override IDetail CreateDetail()
         {
-            Glass glass = new Glass(_idDetail, _name, _cost, _problemClient);
+            Glass glass = new Glass(Id, Name, Cost, ProblemClient);
             return glass;
         }
     }
 
-    class FactoryHeadlights : Details
+    class FactoryHeadlights : Detail
     {
-        private readonly int _cost;
-        private readonly string _name;
-        private readonly string _problemClient;
-        private readonly int _idDetail;
-
         public FactoryHeadlights(int id, int cost, string name, string problemClient)
         {
-            _cost = cost;
-            _name = name;
-            _problemClient = problemClient;
-            _idDetail = id;
+            Cost = cost;
+            Name = name;
+            ProblemClient = problemClient;
+            Id = id;
         }
 
-        public override IDetail Detail()
+        public override IDetail CreateDetail()
         {
-            Headlights headlights = new Headlights(_idDetail, _name, _cost, _problemClient);
+            Headlights headlights = new Headlights(Id, Name, Cost, ProblemClient);
             return headlights;
         }
     }
 
-    class FactoryTurnSignals : Details
+    class FactoryTurnSignals : Detail
     {
-        private readonly int _cost;
-        private readonly string _name;
-        private readonly string _problemClient;
-        private readonly int _idDetail;
-
         public FactoryTurnSignals(int id, int cost, string name, string problemClient)
         {
-            _cost = cost;
-            _name = name;
-            _problemClient = problemClient;
-            _idDetail = id;
+            Cost = cost;
+            Name = name;
+            ProblemClient = problemClient;
+            Id = id;
         }
 
-        public override IDetail Detail()
+        public override IDetail CreateDetail()
         {
-            TurnSignals turnSignals = new TurnSignals(_idDetail, _name, _cost, _problemClient);
+            TurnSignals turnSignals = new TurnSignals(Id, Name, Cost, ProblemClient);
             return turnSignals;
         }
     }
 
-    class FactoryTires : Details
+    class FactoryTires : Detail
     {
-        private readonly int _cost;
-        private readonly string _name;
-        private readonly string _problemClient;
-        private readonly int _idDetail;
-
         public FactoryTires(int id, int cost, string name, string problemClient)
         {
-            _cost = cost;
-            _name = name;
-            _problemClient = problemClient;
-            _idDetail = id;
+            Cost = cost;
+            Name = name;
+            ProblemClient = problemClient;
+            Id = id;
         }
 
-        public override IDetail Detail()
+        public override IDetail CreateDetail()
         {
-            Tires Tires = new Tires(_idDetail, _name, _cost, _problemClient);
+            Tires Tires = new Tires(Id, Name, Cost, ProblemClient);
             return Tires;
         }
     }
 
-    class FactoryDoorLock : Details
+    class FactoryDoorLock : Detail
     {
-        private readonly int _cost;
-        private readonly string _name;
-        private readonly string _problemClient;
-        private readonly int _idDetail;
-
         public FactoryDoorLock(int id, int cost, string name, string problemClient)
         {
-            _cost = cost;
-            _name = name;
-            _problemClient = problemClient;
-            _idDetail = id;
+            Cost = cost;
+            Name = name;
+            ProblemClient = problemClient;
+            Id = id;
         }
 
-        public override IDetail Detail()
+        public override IDetail CreateDetail()
         {
-            DoorLock doorLock = new DoorLock(_idDetail, _name, _cost, _problemClient);
+            DoorLock doorLock = new DoorLock(Id, Name, Cost, ProblemClient);
             return doorLock;
         }
     }
-
 
     class Glass : IDetail
     {
