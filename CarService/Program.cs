@@ -50,6 +50,13 @@ namespace CarService
             }
         }
     }
+    interface IDetail
+    {
+        int Cost { get; }
+        int Id { get; }
+        string Name { get; }
+        string ProblemClient { get; }
+    }
 
     class AutoService
     {
@@ -392,13 +399,6 @@ namespace CarService
         }
     }
 
-    interface IDetail
-    {
-        int Cost { get; }
-        int Id { get; }
-        string Name { get; }
-        string ProblemClient { get; }
-    }
 
     class Glass : IDetail
     {
