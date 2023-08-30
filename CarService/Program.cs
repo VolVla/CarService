@@ -6,19 +6,31 @@ namespace CarService
 {
     internal class Program
     {
-        static private AutoService _autoService = new AutoService();
-        static private Queue<Client> _clients = new Queue<Client>();
-
         static void Main()
+        {
+            WorkAutoService workAutoService = new WorkAutoService();
+            workAutoService.StartWork();
+        }
+    }
+
+    class WorkAutoService
+    {
+        private AutoService _autoService = new AutoService();
+        private Queue<Client> _clients = new Queue<Client>();
+
+        public void StartWork()
         {
             const int CommandClient = 1;
             const int CommandStorage = 2;
+
+            bool isWork = true;
+            ConsoleKey exitButton = ConsoleKey.Enter;
 
             Console.WriteLine("Для начало работы автосервиса нажмите на любую клавишу");
             Console.ReadKey();
             Console.Clear();
 
-            while (true)
+            while (isWork == true)
             {
                 CreateClient();
                 _autoService.ShowBalance();
@@ -38,10 +50,18 @@ namespace CarService
                         Console.WriteLine("Выбрана не существующая команда");
                         break;
                 }
+
+                Console.WriteLine($"Вы хотите выйти из программы?Нажмите {exitButton}.\nДля продолжение работы нажмите любую другую клавишу");
+
+                if (Console.ReadKey().Key == exitButton)
+                {
+                    isWork = false;
+                    Console.WriteLine("Вы вышли из программы");
+                }
             }
         }
 
-        static private void CreateClient()
+        private void CreateClient()
         {
             List<Detail> brokenDetails = new List<Detail>()
                 {
@@ -57,7 +77,7 @@ namespace CarService
             _clients.Enqueue(new Client(nameClient, brokenDetails[random.Next(brokenDetails.Count)]));
         }
 
-        static private void ServiceClient()
+        private void ServiceClient()
         {
             _autoService.ServiceClient(_clients.Dequeue());
         }
@@ -245,8 +265,6 @@ namespace CarService
         public string Name { get; private set; }
         public string NameProblem { get; protected set; }
         public int Cost { get; private set; }
-
-        public abstract Detail Clone();
     }
 
     class Glass : Detail
@@ -254,11 +272,6 @@ namespace CarService
         public Glass(string name, int cost) : base(cost, name)
         {
             NameProblem = "Сломано Лобовое Окно";
-        }
-
-        public override Detail Clone()
-        {
-            return new Glass(Name, Cost);
         }
     }
 
@@ -268,11 +281,6 @@ namespace CarService
         {
             NameProblem = "Разбита одна Фара";
         }
-
-        public override Detail Clone()
-        {
-            return new Headlights(Name, Cost);
-        }
     }
 
     class TurnSignals : Detail
@@ -280,11 +288,6 @@ namespace CarService
         public TurnSignals(string name, int cost) : base(cost, name)
         {
             NameProblem = "Отломались Поворотники";
-        }
-
-        public override Detail Clone()
-        {
-            return new TurnSignals(Name, Cost);
         }
     }
 
@@ -294,11 +297,6 @@ namespace CarService
         {
             NameProblem = "Проколоты Шины";
         }
-
-        public override Detail Clone()
-        {
-            return new Tires(Name, Cost);
-        }
     }
 
     class DoorLock : Detail
@@ -306,11 +304,6 @@ namespace CarService
         public DoorLock(string name, int cost) : base(cost, name)
         {
             NameProblem = "Дверь пытались взломать сломали Замок";
-        }
-
-        public override Detail Clone()
-        {
-            return new DoorLock(Name, Cost);
         }
     }
 }
