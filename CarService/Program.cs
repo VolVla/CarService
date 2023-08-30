@@ -15,14 +15,14 @@ namespace CarService
             const int numberBuyDetails = 3;
             ConsoleKey exitButton = ConsoleKey.Enter;
             bool isWork = true;
+            AutoService autoService = new AutoService();
+            Console.WriteLine("Для начало работы автосервиса нажмите на любую клавишу");
+            Console.ReadKey();
+            Console.Clear();
 
             while (isWork)
             {
-                AutoService autoService = new AutoService();
-                Console.WriteLine("Для начало работы автосервиса нажмите на любую клавишу");
-                Console.ReadKey();
-                Console.Clear();
-                Console.WriteLine($"Для начала работы с клиентами напишите {1}");
+                Console.WriteLine($"Ваш баланс - {autoService.Money}\nДля начала работы с клиентом напишите {numberServiceClient}, для того посмотреть какие есть детали на складе {numberCheckStorage},для покупки деталей {numberBuyDetails}");
                 int.TryParse(Console.ReadLine(), out int result);
 
                 switch (result)
@@ -34,10 +34,10 @@ namespace CarService
                         autoService.ShowDetailStorage();
                         break;
                     case numberBuyDetails:
-                        autoService.BuyDetailsStorage();
+                        autoService.BuyDetailsStorage(autoService);
                         break;
                 }
-                autoService.WorkClients();
+                
                 Console.WriteLine($"\nВы хотите выйти из программы?Нажмите {exitButton}.\nДля продолжение работы нажмите любую другую клавишу");
 
                 if (Console.ReadKey().Key == exitButton)
@@ -52,10 +52,16 @@ namespace CarService
     }
 
 
-    class AutoService
+    class AutoService 
     {
         private Storage _storage = new Storage();
-        public AutoService() { }
+        private int _priceRemonte = 100;
+        private int _fine = 20;
+
+        public AutoService() 
+        {
+            Money = 1000;
+        }
 
         public int Money { get;private set; }
 
@@ -63,11 +69,12 @@ namespace CarService
         {
             AutoClient autoClient = new AutoClient();
             autoClient.ShowInfoClient();
+            RemonteAuto(autoClient);
         }
 
-        public void BuyDetailsStorage()
+        public void BuyDetailsStorage(AutoService autoService)
         {
-            _storage.BuyDetail(Money);
+            _storage.BuyDetail(autoService);
         }
 
         public void ShowDetailStorage()
@@ -75,26 +82,82 @@ namespace CarService
             _storage.ShowDetailsStorage();
         }
 
+        private void RemonteAuto(AutoClient autoClient)
+        {
+            ShowDetailStorage();
+            Console.WriteLine("Выберете деталь  для починки авто");
+            int.TryParse(Console.ReadLine(), out int result  );
+
+            if (_storage.DetailsStorage.Count > 0)
+            {
+                Console.WriteLine($"Цена  деталь - {_storage.DetailsStorage[result-1].CostDetail}, цена ремонта {_priceRemonte}");
+
+                if (_storage.DetailsStorage[result-1].ProblemClient == autoClient.NameProblemClient)
+                {
+                    PayMoney(_storage.DetailsStorage[result - 1].CostDetail);
+                    _storage.DetailsStorage.RemoveAt(result - 1);
+                    Console.WriteLine("Поздравляю довольный клиент");
+                }
+                else
+                {
+                    TakeMoney(_storage.DetailsStorage[result - 1].CostDetail);
+                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.DetailsStorage[result - 1].CostDetail}$");
+                    _storage.DetailsStorage.RemoveAt(result - 1);
+                } 
+            }
+            else
+            {
+                Console.WriteLine($"Извините у нас нету нужной детали мы выплатим штраф {_fine}");
+                TakeMoney(_fine);
+            }
+        }
+
+        public void TakeMoney(int money)
+        {
+            Money -= money;
+        }
+
+        private void PayMoney(int costDetail)
+        {
+            int amountCost = costDetail + _priceRemonte;
+            Money += amountCost;
+            Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
+        }
     }
 
     class AutoClient
     {
-        public string Name { get;private set; }
+        private List<string> nameClients = new List<string>() { "Саня","Вова","Артем","Вика","Аня" };
+        private List<string> problemClients = new List<string>() { "Сломано Лобовое Окно", "Разбита одна Фара", "Отломались Поворотники", "Проколоты Шины", "Дверь пытались взломать сломали Замок", };
+        private Random random = new Random();
 
         public AutoClient() 
-        { 
-
+        {
+            SetProbllemClient();
         }
+
+        public string NameClient { get;private set; }
+        public string NameProblemClient { get;private set; }
 
         public void ShowInfoClient()
         {
-            Console.WriteLine($"");
+            Console.WriteLine($"Имя клиента - {NameClient}, проблема в машине -{NameProblemClient}");
+        }
+
+        private void SetProbllemClient()
+        {
+            int firstProblemClient = 0;
+            int numberProblemClient;
+            numberProblemClient = random.Next(firstProblemClient, problemClients.Count + 1);
+            NameProblemClient = problemClients[numberProblemClient];
+            numberProblemClient = random.Next(firstProblemClient, problemClients.Count + 1);
+            NameClient = nameClients[numberProblemClient];
         }
     }
 
-    class Storage : AutoService
+    class Storage
     {
-        protected List<Details> _detailsStorage = new List<Details>();
+        public List<Details> DetailsStorage = new List<Details>();
         private const int numberDetailFirst = 1;
         private const int numberDetailSecond = 2;
         private const int numberDetailThird = 3;
@@ -111,7 +174,7 @@ namespace CarService
             _catalogDetails.Add(numberDetailFifth, new DetailThird("Замок", "Дверь пытались взломать сломали Замок",50));
         }
 
-        public void BuyDetail(int money) 
+        public void BuyDetail(AutoService service) 
         {
             bool isWork = true;
             ConsoleKey exitButton = ConsoleKey.Enter;
@@ -123,9 +186,10 @@ namespace CarService
                 
                 if (_catalogDetails.ContainsKey(result))
                 {
-                    if (BuyAbilityDetail(money, result))
+                    if (BuyAbilityDetail(service.Money, result))
                     {
-                        _detailsStorage.Add(_catalogDetails[result]);
+                        service.TakeMoney(_catalogDetails[result].CostDetail);
+                        DetailsStorage.Add(_catalogDetails[result]);
                     }
                 }
                 else
@@ -140,6 +204,16 @@ namespace CarService
                     Console.WriteLine("Вы вышли из программы");
                     isWork = false;
                 }
+
+                Console.Clear();
+            }
+        }
+
+        public void ShowDetailsStorage()
+        {
+            for( int i = 0; i < DetailsStorage.Count;i++)
+            {
+                Console.WriteLine($"Номер {i+ 1} лежащей на складе детали, тип детали {DetailsStorage[i].NameDetail}");
             }
         }
 
@@ -169,13 +243,6 @@ namespace CarService
             }
         }
 
-        public void ShowDetailsStorage()
-        {
-            for( int i = 0; i < _detailsStorage.Count;i++)
-            {
-                Console.WriteLine($"Номер {i} лежащей на складе детали, тип детали {_detailsStorage[i].NameDetail}");
-            }
-        }
     }
 
     abstract class Details 
@@ -222,7 +289,6 @@ namespace CarService
         {
             return new DetailThird(NameDetail, ProblemClient, CostDetail);
         }
-
     }
 
     class DetailFourth : Details 
