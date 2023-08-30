@@ -63,8 +63,8 @@ namespace CarService
 
         public void WorkClients()
         {
-            AutoClient autoClient = new AutoClient();
-            autoClient.ShowInfoClient();
+            Client autoClient = new Client();
+            autoClient.ShowInfo();
             RemonteAuto(autoClient);
         }
 
@@ -75,30 +75,30 @@ namespace CarService
 
         public void ShowDetailStorage()
         {
-            _storage.ShowDetailsStorage();
+            _storage.ShowDetails();
         }
 
-        private void RemonteAuto(AutoClient autoClient)
+        private void RemonteAuto(Client autoClient)
         {
             ShowDetailStorage();
             Console.WriteLine("Выберете деталь  для починки авто");
             int.TryParse(Console.ReadLine(), out int result);
 
-            if (_storage.DetailsStorage.Count > 0)
+            if (_storage.Details.Count > 0)
             {
-                Console.WriteLine($"Цена  деталь - {_storage.DetailsStorage[result - 1].CostDetail}, цена ремонта {_priceRemonte}");
+                Console.WriteLine($"Цена  деталь - {_storage.Details[result - 1].Cost}, цена ремонта {_priceRemonte}");
 
-                if (_storage.DetailsStorage[result - 1].ProblemClient == autoClient.NameProblemClient)
+                if (_storage.Details[result - 1].ProblemClient == autoClient.NameProblem)
                 {
-                    PayMoney(_storage.DetailsStorage[result - 1].CostDetail);
-                    _storage.DetailsStorage.RemoveAt(result - 1);
+                    PayMoney(_storage.Details[result - 1].Cost);
+                    _storage.Details.RemoveAt(result - 1);
                     Console.WriteLine("Поздравляю довольный клиент");
                 }
                 else
                 {
-                    TakeMoney(_storage.DetailsStorage[result - 1].CostDetail);
-                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.DetailsStorage[result - 1].CostDetail}$");
-                    _storage.DetailsStorage.RemoveAt(result - 1);
+                    TakeMoney(_storage.Details[result - 1].Cost);
+                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.Details[result - 1].Cost}$");
+                    _storage.Details.RemoveAt(result - 1);
                 }
             }
             else
@@ -121,33 +121,33 @@ namespace CarService
         }
     }
 
-    class AutoClient
+    class Client
     {
-        private List<string> _nameClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
-        private List<string> _problemClients = new List<string>() { "Сломано Лобовое Окно", "Разбита одна Фара", "Отломались Поворотники", "Проколоты Шины", "Дверь пытались взломать сломали Замок", };
+        private List<string> _names = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
+        private List<string> _problems = new List<string>() { "Сломано Лобовое Окно", "Разбита одна Фара", "Отломались Поворотники", "Проколоты Шины", "Дверь пытались взломать сломали Замок", };
         private Random _random = new Random();
 
-        public AutoClient()
+        public Client()
         {
-            SetProbllemClient();
+            SetProbllem();
         }
 
-        public string NameClient { get; private set; }
-        public string NameProblemClient { get; private set; }
+        public string Name { get; private set; }
+        public string NameProblem { get; private set; }
 
-        public void ShowInfoClient()
+        public void ShowInfo()
         {
-            Console.WriteLine($"Имя клиента - {NameClient}, проблема в машине -{NameProblemClient}");
+            Console.WriteLine($"Имя клиента - {Name}, проблема в машине -{NameProblem}");
         }
 
-        private void SetProbllemClient()
+        private void SetProbllem()
         {
             int firstProblemClient = 0;
             int numberProblemClient;
-            numberProblemClient = _random.Next(firstProblemClient, _problemClients.Count + 1);
-            NameProblemClient = _problemClients[numberProblemClient];
-            numberProblemClient = _random.Next(firstProblemClient, _problemClients.Count + 1);
-            NameClient = _nameClients[numberProblemClient];
+            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
+            NameProblem = _problems[numberProblemClient];
+            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
+            Name = _names[numberProblemClient];
         }
     }
 
@@ -158,16 +158,16 @@ namespace CarService
         private const int _numberDetailThird = 3;
         private const int _numberDetailFourth = 4;
         private const int _numberDetailFifth = 5;
-        public List<Details> DetailsStorage = new List<Details>();
-        private Dictionary<int, Details> _catalogDetails = new Dictionary<int, Details>();
+        public List<Detail> Details = new List<Detail>();
+        private Dictionary<int, Detail> _catalogDetails = new Dictionary<int, Detail>();
 
         public Storage()
         {
-            _catalogDetails.Add(_numberDetailFirst, new DetailFirst("Стекло", "Сломано Лобовое Окно", 100));
-            _catalogDetails.Add(_numberDetailSecond, new DetailSecond("Фары", "Разбита одна Фара", 20));
-            _catalogDetails.Add(_numberDetailThird, new DetailThird("Поворотники", "Отломались Поворотники", 40));
-            _catalogDetails.Add(_numberDetailFourth, new DetailThird("Шины", "Проколоты Шины", 120));
-            _catalogDetails.Add(_numberDetailFifth, new DetailThird("Замок", "Дверь пытались взломать сломали Замок", 50));
+            _catalogDetails.Add(_numberDetailFirst, new Detail("Стекло", "Сломано Лобовое Окно", 100));
+            _catalogDetails.Add(_numberDetailSecond, new Detail("Фары", "Разбита одна Фара", 20));
+            _catalogDetails.Add(_numberDetailThird, new Detail("Поворотники", "Отломались Поворотники", 40));
+            _catalogDetails.Add(_numberDetailFourth, new Detail("Шины", "Проколоты Шины", 120));
+            _catalogDetails.Add(_numberDetailFifth, new Detail("Замок", "Дверь пытались взломать сломали Замок", 50));
         }
 
         public void BuyDetail(AutoService service)
@@ -184,8 +184,8 @@ namespace CarService
                 {
                     if (BuyAbilityDetail(service.Money, result))
                     {
-                        service.TakeMoney(_catalogDetails[result].CostDetail);
-                        DetailsStorage.Add(_catalogDetails[result]);
+                        service.TakeMoney(_catalogDetails[result].Cost);
+                        Details.Add(_catalogDetails[result].Clone());
                     }
                 }
                 else
@@ -205,11 +205,11 @@ namespace CarService
             }
         }
 
-        public void ShowDetailsStorage()
+        public void ShowDetails()
         {
-            for (int i = 0; i < DetailsStorage.Count; i++)
+            for (int i = 0; i < Details.Count; i++)
             {
-                Console.WriteLine($"Номер {i + 1} лежащей на складе детали, тип детали {DetailsStorage[i].NameDetail}");
+                Console.WriteLine($"Номер {i + 1} лежащей на складе детали, тип детали {Details[i].Name}");
             }
         }
 
@@ -217,14 +217,14 @@ namespace CarService
         {
             bool isResult;
 
-            if (_catalogDetails[idDetail].CostDetail <= money)
+            if (_catalogDetails[idDetail].Cost <= money)
             {
-                Console.WriteLine($"Поздравляю вы купили деталь за {_catalogDetails[idDetail].CostDetail}, у вас осталось {money} $");
+                Console.WriteLine($"Поздравляю вы купили деталь за {_catalogDetails[idDetail].Cost}, у вас осталось {money} $");
                 isResult = true;
             }
             else
             {
-                Console.WriteLine($"Извините деталь стоит {_catalogDetails[idDetail].CostDetail}, а у вас в наличии {money} $"); ;
+                Console.WriteLine($"Извините деталь стоит {_catalogDetails[idDetail].Cost}, а у вас в наличии {money} $"); ;
                 isResult = false;
             }
 
@@ -235,74 +235,27 @@ namespace CarService
         {
             foreach (var numberDetail in _catalogDetails)
             {
-                Console.WriteLine($"Номер детали в каталоге - {numberDetail.Key},тип детали в каталоге - {_catalogDetails[numberDetail.Key].NameDetail}");
+                Console.WriteLine($"Номер детали в каталоге - {numberDetail.Key},тип детали в каталоге - {_catalogDetails[numberDetail.Key].Name}");
             }
         }
     }
 
-    abstract class Details
+    class Detail
     {
-        public Details(string nameDetail, string problemClient, int costDetail)
+        public Detail(string nameDetail, string problemClient, int costDetail)
         {
-            NameDetail = nameDetail;
+            Name = nameDetail;
             ProblemClient = problemClient;
-            CostDetail = costDetail;
+            Cost = costDetail;
         }
 
-        public int CostDetail { get; private set; }
-        public string NameDetail { get; private set; }
+        public int Cost { get; private set; }
+        public string Name { get; private set; }
         public string ProblemClient { get; private set; }
 
-        protected abstract Details Clone();
-    }
-
-    class DetailFirst : Details
-    {
-        public DetailFirst(string nameDetail, string problemClient, int costDetail) : base(nameDetail, problemClient, costDetail) { }
-
-        protected override Details Clone()
+        public Detail Clone()
         {
-            return new DetailFirst(NameDetail, ProblemClient, CostDetail);
-        }
-    }
-
-    class DetailSecond : Details
-    {
-        public DetailSecond(string nameDetail, string problemClient, int costDetail) : base(nameDetail, problemClient, costDetail) { }
-
-        protected override Details Clone()
-        {
-            return new DetailSecond(NameDetail, ProblemClient, CostDetail);
-        }
-    }
-
-    class DetailThird : Details
-    {
-        public DetailThird(string nameDetail, string problemClient, int costDetail) : base(nameDetail, problemClient, costDetail) { }
-
-        protected override Details Clone()
-        {
-            return new DetailThird(NameDetail, ProblemClient, CostDetail);
-        }
-    }
-
-    class DetailFourth : Details
-    {
-        public DetailFourth(string nameDetail, string problemClient, int costDetail) : base(nameDetail, problemClient, costDetail) { }
-
-        protected override Details Clone()
-        {
-            return new DetailFourth(NameDetail, ProblemClient, CostDetail);
-        }
-    }
-
-    class DetailFifth : Details
-    {
-        public DetailFifth(string nameDetail, string problemClient, int costDetail) : base(nameDetail, problemClient, costDetail) { }
-
-        protected override Details Clone()
-        {
-            return new DetailFifth(NameDetail, ProblemClient, CostDetail);
+            return new Detail(Name, ProblemClient, Cost);
         }
     }
 }
