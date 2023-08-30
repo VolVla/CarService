@@ -7,9 +7,9 @@ namespace CarService
     {
         static void Main()
         {
-            const int numberServiceClient = 1;
-            const int numberCheckStorage = 2;
-            const int numberBuyDetails = 3;
+            const int ServiceClient = 1;
+            const int CheckStorage = 2;
+            const int BuyDetails = 3;
             ConsoleKey exitButton = ConsoleKey.Enter;
             bool isWork = true;
             AutoService autoService = new AutoService();
@@ -19,18 +19,18 @@ namespace CarService
 
             while (isWork)
             {
-                Console.WriteLine($"Ваш баланс - {autoService.Money}\nДля начала работы с клиентом напишите {numberServiceClient}, для того посмотреть какие есть детали на складе {numberCheckStorage},для покупки деталей {numberBuyDetails}");
+                Console.WriteLine($"Ваш баланс - {autoService.Money}\nДля начала работы с клиентом напишите {ServiceClient}, для того посмотреть какие есть детали на складе {CheckStorage},для покупки деталей {BuyDetails}");
                 int.TryParse(Console.ReadLine(), out int result);
 
                 switch (result)
                 {
-                    case numberServiceClient:
+                    case ServiceClient:
                         autoService.WorkClients();
                         break;
-                    case numberCheckStorage:
+                    case CheckStorage:
                         autoService.ShowDetailStorage();
                         break;
-                    case numberBuyDetails:
+                    case BuyDetails:
                         autoService.BuyDetailsStorage(autoService);
                         break;
                 }
@@ -50,8 +50,10 @@ namespace CarService
 
     class AutoService
     {
+        private List<string> _namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
+        private List<string> _problemsClients = new List<string>() { "Сломано Лобовое Окно", "Разбита одна Фара", "Отломались Поворотники", "Проколоты Шины", "Дверь пытались взломать сломали Замок", };
         private Storage _storage = new Storage();
-        private int _priceRemonte = 100;
+        private int _priceRepair = 100;
         private int _punishment = 20;
 
         public AutoService()
@@ -63,7 +65,7 @@ namespace CarService
 
         public void WorkClients()
         {
-            Client autoClient = new Client();
+            Client autoClient = new Client(_namesClients, _problemsClients);
             autoClient.ShowInfo();
             RemonteAuto(autoClient);
         }
@@ -82,23 +84,25 @@ namespace CarService
         {
             ShowDetailStorage();
             Console.WriteLine("Выберете деталь  для починки авто");
-            int.TryParse(Console.ReadLine(), out int result);
+            int.TryParse(Console.ReadLine(), out int numberDetail);
 
             if (_storage.Details.Count > 0)
             {
-                Console.WriteLine($"Цена  деталь - {_storage.Details[result - 1].Cost}, цена ремонта {_priceRemonte}");
+                Console.WriteLine($"Цена  детали - {_storage.Details[numberDetail - 1].Cost}, цена ремонта {_priceRepair}");
 
-                if (_storage.Details[result - 1].ProblemClient == autoClient.NameProblem)
+                if (_storage.Details[numberDetail - 1].ProblemClient == autoClient.NameProblem)
                 {
-                    PayMoney(_storage.Details[result - 1].Cost);
-                    _storage.Details.RemoveAt(result - 1);
+                    int amountCost = _priceRepair + _storage.Details[numberDetail - 1].Cost;
+                    Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
+                    Money += amountCost;
+                    _storage.Details.RemoveAt(numberDetail - 1);
                     Console.WriteLine("Поздравляю довольный клиент");
                 }
                 else
                 {
-                    TakeMoney(_storage.Details[result - 1].Cost);
-                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.Details[result - 1].Cost}$");
-                    _storage.Details.RemoveAt(result - 1);
+                    TakeMoney(_storage.Details[numberDetail - 1].Cost);
+                    Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.Details[numberDetail - 1].Cost}$");
+                    _storage.Details.RemoveAt(numberDetail - 1);
                 }
             }
             else
@@ -112,24 +116,20 @@ namespace CarService
         {
             Money -= money;
         }
-
-        private void PayMoney(int costDetail)
-        {
-            int amountCost = costDetail + _priceRemonte;
-            Money += amountCost;
-            Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
-        }
     }
 
     class Client
     {
-        private List<string> _names = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
-        private List<string> _problems = new List<string>() { "Сломано Лобовое Окно", "Разбита одна Фара", "Отломались Поворотники", "Проколоты Шины", "Дверь пытались взломать сломали Замок", };
         private Random _random = new Random();
 
-        public Client()
+        public Client(List<string> _names, List<string> _problems)
         {
-            SetProbllem();
+            int firstProblemClient = 0;
+            int numberProblemClient;
+            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
+            NameProblem = _problems[numberProblemClient];
+            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
+            Name = _names[numberProblemClient];
         }
 
         public string Name { get; private set; }
@@ -139,30 +139,25 @@ namespace CarService
         {
             Console.WriteLine($"Имя клиента - {Name}, проблема в машине -{NameProblem}");
         }
-
-        private void SetProbllem()
-        {
-            int firstProblemClient = 0;
-            int numberProblemClient;
-            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
-            NameProblem = _problems[numberProblemClient];
-            numberProblemClient = _random.Next(firstProblemClient, _problems.Count + 1);
-            Name = _names[numberProblemClient];
-        }
     }
 
     class Storage
     {
-        private const int _numberDetailFirst = 1;
-        private const int _numberDetailSecond = 2;
-        private const int _numberDetailThird = 3;
-        private const int _numberDetailFourth = 4;
-        private const int _numberDetailFifth = 5;
         public List<Detail> Details = new List<Detail>();
+        private int _numberDetailFirst;
+        private int _numberDetailSecond;
+        private int _numberDetailThird;
+        private int _numberDetailFourth;
+        private int _numberDetailFifth;
         private Dictionary<int, Detail> _catalogDetails = new Dictionary<int, Detail>();
 
         public Storage()
         {
+            _numberDetailFirst = 1;
+            _numberDetailSecond = 2;
+            _numberDetailThird = 3;
+            _numberDetailFourth = 4;
+            _numberDetailFifth = 5;
             _catalogDetails.Add(_numberDetailFirst, new Detail("Стекло", "Сломано Лобовое Окно", 100));
             _catalogDetails.Add(_numberDetailSecond, new Detail("Фары", "Разбита одна Фара", 20));
             _catalogDetails.Add(_numberDetailThird, new Detail("Поворотники", "Отломались Поворотники", 40));
@@ -178,14 +173,14 @@ namespace CarService
             while (isWork)
             {
                 ShowCatalogDetails();
-                int.TryParse(Console.ReadLine(), out int result);
+                int.TryParse(Console.ReadLine(), out int numberDetail);
 
-                if (_catalogDetails.ContainsKey(result))
+                if (_catalogDetails.ContainsKey(numberDetail))
                 {
-                    if (BuyAbilityDetail(service.Money, result))
+                    if (BuyAbilityDetail(service.Money, numberDetail))
                     {
-                        service.TakeMoney(_catalogDetails[result].Cost);
-                        Details.Add(_catalogDetails[result].Clone());
+                        service.TakeMoney(_catalogDetails[numberDetail].Cost);
+                        Details.Add(_catalogDetails[numberDetail].Clone());
                     }
                 }
                 else
