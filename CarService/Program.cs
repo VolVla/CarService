@@ -6,12 +6,13 @@ namespace CarService
 {
     internal class Program
     {
+        static private AutoService _autoService = new AutoService();
+        static private Queue<Client> _clients = new Queue<Client>();
+
         static void Main()
         {
             const int CommandClient = 1;
             const int CommandStorage = 2;
-            AutoService _autoService = new AutoService();
-            Queue<Client> _clients = new Queue<Client>();
 
             Console.WriteLine("Для начало работы автосервиса нажмите на любую клавишу");
             Console.ReadKey();
@@ -28,18 +29,21 @@ namespace CarService
                     case CommandClient:
                         ServiceClient();
                         break;
+
                     case CommandStorage:
                         _autoService.ShowDetailsStorage();
                         break;
+
                     default:
                         Console.WriteLine("Выбрана не существующая команда");
                         break;
                 }
             }
+        }
 
-            void CreateClient()
-            {
-                List<Detail> brokenDetails = new List<Detail>()
+        static private void CreateClient()
+        {
+            List<Detail> brokenDetails = new List<Detail>()
                 {
                     new Glass("Сломано Лобовое Окно", 0),
                     new Headlights("Разбита одна Фара", 0),
@@ -47,16 +51,15 @@ namespace CarService
                     new Tires("Проколоты Шины", 0),
                     new DoorLock("Дверь пытались взломать сломали Замок", 0)
                 };
-                Random random = new Random();
-                List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
-                string nameClient = namesClients[random.Next(namesClients.Count)];
-                _clients.Enqueue(new Client(nameClient, brokenDetails[random.Next(brokenDetails.Count)]));
-            }
+            Random random = new Random();
+            List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
+            string nameClient = namesClients[random.Next(namesClients.Count)];
+            _clients.Enqueue(new Client(nameClient, brokenDetails[random.Next(brokenDetails.Count)]));
+        }
 
-            void ServiceClient()
-            {
-                _autoService.ServiceClient(_clients.Dequeue());
-            }
+        static private void ServiceClient()
+        {
+            _autoService.ServiceClient(_clients.Dequeue());
         }
     }
 
@@ -132,8 +135,6 @@ namespace CarService
                 {
                     Console.WriteLine("Данной детали не существует");
                 }
-
-                return;
             }
             else
             {
