@@ -41,7 +41,7 @@ namespace CarService
             Console.ReadKey();
             Console.Clear();
 
-            while (isWork == true)
+            while (isWork)
             {
                 CreateClient();
                 ShowBalance();
@@ -114,7 +114,7 @@ namespace CarService
                     int costDetail = _storage.PriceDetail(numberDetail);
                     Console.WriteLine($"Цена  детали - {costDetail}, цена ремонта {_priceRepair}");
 
-                    if (autoClient.GiveProblemDetail().Name == _storage.GetDetail(numberDetail).Name)
+                    if (autoClient.GiveDetail().Name == _storage.GetDetail(numberDetail).Name)
                     {
                         autoClient.GetNewDetail(_storage.GetDetail(numberDetail));
                         int amountCost = _priceRepair + costDetail;
@@ -172,32 +172,32 @@ namespace CarService
 
     class Client
     {
-        private Detail _problemDetail;
+        private Detail _Detail;
 
         public Client(string name, Detail detail, string nameProblemDetail)
         {
             Name = name;
-            _problemDetail = detail;
+            _Detail = detail;
             ProblemDetail = nameProblemDetail;
-            _problemDetail.SetCorrectDetail(false);
+            _Detail.SetCorrectDetail(false);
         }
 
         public string Name { get; private set; }
         public string ProblemDetail { get; private set; }
 
-        public Detail GiveProblemDetail()
+        public Detail GiveDetail()
         {
-            return _problemDetail;
+            return _Detail;
         }
 
         public void GetNewDetail(Detail detail)
         {
-            _problemDetail = detail;
+            _Detail = detail;
         }
 
         public void ShowInfo()
         {
-            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {_problemDetail.Name}");
+            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {_Detail.Name}");
         }
     }
 
