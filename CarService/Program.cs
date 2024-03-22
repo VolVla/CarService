@@ -9,7 +9,7 @@ namespace CarService
         static void Main()
         {
             WorkAutoService workAutoService = new WorkAutoService();
-            workAutoService.Work();
+            workAutoService.WorkService();
         }
     }
 
@@ -29,7 +29,7 @@ namespace CarService
             _punishment = 20;
         }
 
-        public void Work()
+        public void WorkService()
         {
             const int CommandClient = 1;
             const int CommandStorage = 2;
@@ -51,7 +51,7 @@ namespace CarService
                 switch (result)
                 {
                     case CommandClient:
-                        ServiceClient();
+                        ServiceClient(_clients.Dequeue());
                         break;
 
                     case CommandStorage:
@@ -101,17 +101,19 @@ namespace CarService
 
         private void RepairCar(Client autoClient)
         {
+            int amountDetails = _storage.AmountDetails();
+
             ShowDetailsStorage();
             Console.WriteLine("Выберете деталь  для починки авто");
             int.TryParse(Console.ReadLine(), out int numberDetail);
 
-            if (_storage.AmountDetails() > 0)
+            if (amountDetails > 0)
             {
-                if (numberDetail <= _storage.AmountDetails())
+                if (numberDetail <= amountDetails)
                 {
                     Console.WriteLine($"Цена  детали - {_storage.PriceDetail(numberDetail)}, цена ремонта {_priceRepair}");
 
-                    if (autoClient.CorrectReplace(_storage.GetOneDetail(numberDetail)))
+                    if (autoClient.ProblemDetail == _storage.GetOneDetail(numberDetail))
                     {
                         int amountCost = _priceRepair + _storage.PriceDetail(numberDetail);
                         Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
@@ -142,55 +144,29 @@ namespace CarService
 
         private void CreateClient()
         {
-            List<Detail> brokenDetails = new List<Detail>()
-                {
-                    new Glass("Сломано Лобовое Окно", 0),
-                    new Headlights("Разбита одна Фара", 0),
-                    new TurnSignals("Отломались Поворотники", 0),
-                    new Tires("Проколоты Шины", 0),
-                    new DoorLock("Дверь пытались взломать сломали Замок", 0)
-                };
+            
             Random random = new Random();
             List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
             string nameClient = namesClients[random.Next(namesClients.Count)];
-            _clients.Enqueue(new Client(nameClient, brokenDetails[random.Next(brokenDetails.Count)]));
-        }
-
-        private void ServiceClient()
-        {
-            ServiceClient(_clients.Dequeue());
+            _clients.Enqueue(new Client(nameClient,random.Next(_storage.AmountDetails());
         }
     }
 
     class Client
     {
-        private Detail _problemDetail;
-
-        public Client(string _name, Detail problemDetail)
+        public Client(string _name, int numberProblemDetail)
         {
             Name = _name;
-            _problemDetail = problemDetail;
+
         }
+
+        public Detail ProblemDetail { get; private set; }
 
         public string Name { get; private set; }
 
-        public bool CorrectReplace(Detail detail)
-        {
-            if (detail.NameProblem == _problemDetail.NameProblem)
-            {
-                Console.WriteLine("Автомеханик заменил на правильную деталь");
-                return true;
-            }
-            else
-            {
-                Console.WriteLine("Автомеханик заменил на не правильную деталь");
-                return false;
-            }
-        }
-
         public void ShowInfo()
         {
-            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {_problemDetail.Name}");
+            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {ProblemDetail.Name}");
         }
     }
 
@@ -202,11 +178,11 @@ namespace CarService
         {
             _details = new List<Detail>()
             {
-                new Glass("Стекло", 100),
-                new Headlights("Фары", 20),
-                new TurnSignals("Поворотники", 40),
-                new Tires("Шины", 120),
-                new DoorLock("Замок", 50)
+                new Glass( 100),
+                new Headlights( 20),
+                new TurnSignals(40),
+                new Tires(120),
+                new DoorLock(50)
             };
         }
 
@@ -244,57 +220,68 @@ namespace CarService
         {
             return _details[numberDetail - 1];
         }
+
+        public Detail CreateProblemDetail(int numberDetail)
+        {
+            Detail temporary = new Detail() 
+            _details[numberDetail]
+            return 
+        }
     }
 
     abstract class Detail
     {
-        public Detail(int cost, string name)
+        public Detail(int cost)
         {
             Cost = cost;
-            Name = name;
         }
 
-        public string Name { get; private set; }
+        public string Name { get; protected set; }
         public string NameProblem { get; protected set; }
         public int Cost { get; private set; }
     }
 
     class Glass : Detail
     {
-        public Glass(string name, int cost) : base(cost, name)
+        public Glass(int cost) : base(cost)
         {
+            Name = "Стекло";
             NameProblem = "Сломано Лобовое Окно";
         }
     }
 
     class Headlights : Detail
     {
-        public Headlights(string name, int cost) : base(cost, name)
+        public Headlights(int cost) : base(cost)
         {
+            Name = "Фары";
             NameProblem = "Разбита одна Фара";
         }
     }
 
     class TurnSignals : Detail
     {
-        public TurnSignals(string name, int cost) : base(cost, name)
+        public TurnSignals( int cost) : base(cost)
         {
+            Name = "Поворотники";
             NameProblem = "Отломались Поворотники";
         }
     }
 
     class Tires : Detail
     {
-        public Tires(string name, int cost) : base(cost, name)
+        public Tires(int cost) : base(cost)
         {
+            Name = "Шины";
             NameProblem = "Проколоты Шины";
         }
     }
 
     class DoorLock : Detail
     {
-        public DoorLock(string name, int cost) : base(cost, name)
+        public DoorLock(int cost) : base(cost)
         {
+            Name = "Дверь";
             NameProblem = "Дверь пытались взломать сломали Замок";
         }
     }
