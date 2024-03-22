@@ -105,24 +105,25 @@ namespace CarService
 
             ShowDetailsStorage();
             Console.WriteLine("Выберете деталь  для починки авто");
-            int.TryParse(Console.ReadLine(), out int numberDetail);
+            bool isCorrect = int.TryParse(Console.ReadLine(), out int numberDetail);
 
-            if (amountDetails > 0)
+            if (amountDetails > 0 & isCorrect == true)
             {
                 if (numberDetail <= amountDetails)
                 {
-                    Console.WriteLine($"Цена  детали - {_storage.PriceDetail(numberDetail)}, цена ремонта {_priceRepair}");
+                    int costDetail = _storage.PriceDetail(numberDetail);
+                    Console.WriteLine($"Цена  детали - {costDetail}, цена ремонта {_priceRepair}");
 
-                    if (autoClient.ProblemDetail == _storage.GetOneDetail(numberDetail))
+                    if (autoClient.GetProblemDetail().Name == _storage.GetOneDetail(numberDetail).Name)
                     {
-                        int amountCost = _priceRepair + _storage.PriceDetail(numberDetail);
+                        int amountCost = _priceRepair + costDetail;
                         Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
                         TakeMoney(amountCost);
                         Console.WriteLine("Поздравляю довольный клиент");
                     }
                     else
                     {
-                        Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {_storage.PriceDetail(numberDetail)}$");
+                        Console.WriteLine($"Извините мы поставили нету детали в качестве извинения мы выплатим ущерб в виде {costDetail}$");
                         GiveMoney(_storage.PriceDetail(numberDetail));
                     }
 
@@ -144,29 +145,52 @@ namespace CarService
 
         private void CreateClient()
         {
-            
+            List<Detail> details = new List<Detail>()
+            {
+                    new Glass(0),
+                    new Headlights(0),
+                    new TurnSignals(0),
+                    new Tires(0),
+                    new DoorLock(0)
+            };
+            List<string> nameBrokenDetails = new List<string>()
+            {
+                "Сломано Лобовое Окно",
+                "Разбита одна Фара",
+                "Отломались Поворотники",
+                "Проколоты Шины",
+                "Дверь пытались взломать сломали Замок"
+            };
             Random random = new Random();
             List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
             string nameClient = namesClients[random.Next(namesClients.Count)];
-            _clients.Enqueue(new Client(nameClient,random.Next(_storage.AmountDetails());
+            int numberDetail = random.Next(details.Count);
+            _clients.Enqueue(new Client(nameClient, details[numberDetail], nameBrokenDetails[numberDetail]));
         }
     }
 
     class Client
     {
-        public Client(string _name, int numberProblemDetail)
+        private Detail _problemDetail;
+
+        public Client(string _name, Detail detail, string nameProblemDetail)
         {
             Name = _name;
-
+            _problemDetail = detail;
+            ProblemDetail = nameProblemDetail;
         }
 
-        public Detail ProblemDetail { get; private set; }
-
         public string Name { get; private set; }
+        public string ProblemDetail { get; private set; }
+
+        public Detail GetProblemDetail()
+        {
+            return _problemDetail;
+        }
 
         public void ShowInfo()
         {
-            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {ProblemDetail.Name}");
+            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {_problemDetail.Name}");
         }
     }
 
@@ -178,10 +202,10 @@ namespace CarService
         {
             _details = new List<Detail>()
             {
-                new Glass( 100),
-                new Headlights( 20),
-                new TurnSignals(40),
-                new Tires(120),
+                new Glass(100),
+                new Headlights(20),
+                new TurnSignals( 40),
+                new Tires( 120),
                 new DoorLock(50)
             };
         }
@@ -220,13 +244,6 @@ namespace CarService
         {
             return _details[numberDetail - 1];
         }
-
-        public Detail CreateProblemDetail(int numberDetail)
-        {
-            Detail temporary = new Detail() 
-            _details[numberDetail]
-            return 
-        }
     }
 
     abstract class Detail
@@ -246,7 +263,6 @@ namespace CarService
         public Glass(int cost) : base(cost)
         {
             Name = "Стекло";
-            NameProblem = "Сломано Лобовое Окно";
         }
     }
 
@@ -255,16 +271,14 @@ namespace CarService
         public Headlights(int cost) : base(cost)
         {
             Name = "Фары";
-            NameProblem = "Разбита одна Фара";
         }
     }
 
     class TurnSignals : Detail
     {
-        public TurnSignals( int cost) : base(cost)
+        public TurnSignals(int cost) : base(cost)
         {
             Name = "Поворотники";
-            NameProblem = "Отломались Поворотники";
         }
     }
 
@@ -273,7 +287,6 @@ namespace CarService
         public Tires(int cost) : base(cost)
         {
             Name = "Шины";
-            NameProblem = "Проколоты Шины";
         }
     }
 
@@ -281,8 +294,7 @@ namespace CarService
     {
         public DoorLock(int cost) : base(cost)
         {
-            Name = "Дверь";
-            NameProblem = "Дверь пытались взломать сломали Замок";
+            Name = "Замок";
         }
     }
 }
