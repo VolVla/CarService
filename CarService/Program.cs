@@ -114,8 +114,9 @@ namespace CarService
                     int costDetail = _storage.PriceDetail(numberDetail);
                     Console.WriteLine($"Цена  детали - {costDetail}, цена ремонта {_priceRepair}");
 
-                    if (autoClient.GetProblemDetail().Name == _storage.GetOneDetail(numberDetail).Name)
+                    if (autoClient.GiveProblemDetail().Name == _storage.GetDetail(numberDetail).Name)
                     {
+                        autoClient.GetNewDetail(_storage.GetDetail(numberDetail));
                         int amountCost = _priceRepair + costDetail;
                         Console.WriteLine($"Вы заработали {amountCost} $ за успешную работу");
                         TakeMoney(amountCost);
@@ -147,11 +148,11 @@ namespace CarService
         {
             List<Detail> details = new List<Detail>()
             {
-                    new Glass(0),
-                    new Headlights(0),
-                    new TurnSignals(0),
-                    new Tires(0),
-                    new DoorLock(0)
+                new Detail("Стекло",0),
+                new Detail("Фары",0),
+                new Detail("Поворотники",0),
+                new Detail("Шины", 0),
+                new Detail("Замок",0)
             };
             List<string> nameBrokenDetails = new List<string>()
             {
@@ -173,19 +174,25 @@ namespace CarService
     {
         private Detail _problemDetail;
 
-        public Client(string _name, Detail detail, string nameProblemDetail)
+        public Client(string name, Detail detail, string nameProblemDetail)
         {
-            Name = _name;
+            Name = name;
             _problemDetail = detail;
             ProblemDetail = nameProblemDetail;
+            _problemDetail.SetCorrectDetail(false);
         }
 
         public string Name { get; private set; }
         public string ProblemDetail { get; private set; }
 
-        public Detail GetProblemDetail()
+        public Detail GiveProblemDetail()
         {
             return _problemDetail;
+        }
+
+        public void GetNewDetail(Detail detail)
+        {
+            _problemDetail = detail;
         }
 
         public void ShowInfo()
@@ -202,11 +209,11 @@ namespace CarService
         {
             _details = new List<Detail>()
             {
-                new Glass(100),
-                new Headlights(20),
-                new TurnSignals( 40),
-                new Tires( 120),
-                new DoorLock(50)
+                new Detail("Стекло",100),
+                new Detail("Фары",20),
+                new Detail("Поворотники",40),
+                new Detail("Шины", 120),
+                new Detail("Замок",50)
             };
         }
 
@@ -240,61 +247,28 @@ namespace CarService
             return _details[numberDetail - 1].Cost;
         }
 
-        public Detail GetOneDetail(int numberDetail)
+        public Detail GetDetail(int numberDetail)
         {
             return _details[numberDetail - 1];
         }
     }
 
-    abstract class Detail
+    class Detail
     {
-        public Detail(int cost)
+        private bool _isCorrectDetail = true;
+
+        public Detail(string name, int cost)
         {
+            Name = name;
             Cost = cost;
         }
 
-        public string Name { get; protected set; }
-        public string NameProblem { get; protected set; }
+        public string Name { get; private set; }
         public int Cost { get; private set; }
-    }
 
-    class Glass : Detail
-    {
-        public Glass(int cost) : base(cost)
+        public void SetCorrectDetail(bool isCorrectDetail)
         {
-            Name = "Стекло";
-        }
-    }
-
-    class Headlights : Detail
-    {
-        public Headlights(int cost) : base(cost)
-        {
-            Name = "Фары";
-        }
-    }
-
-    class TurnSignals : Detail
-    {
-        public TurnSignals(int cost) : base(cost)
-        {
-            Name = "Поворотники";
-        }
-    }
-
-    class Tires : Detail
-    {
-        public Tires(int cost) : base(cost)
-        {
-            Name = "Шины";
-        }
-    }
-
-    class DoorLock : Detail
-    {
-        public DoorLock(int cost) : base(cost)
-        {
-            Name = "Замок";
+            _isCorrectDetail = isCorrectDetail;
         }
     }
 }
