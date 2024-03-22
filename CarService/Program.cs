@@ -156,31 +156,31 @@ namespace CarService
 
     class Client
     {
-        private Detail _Detail;
+        private Detail _detail;
         private int _costBrokenDetail;
 
         public Client(string name, string nameBrokenDetail)
         {
             _costBrokenDetail = 0;
             Name = name;
-            _Detail = new Detail(nameBrokenDetail, _costBrokenDetail, nameBrokenDetail);
+            _detail = new Detail(nameBrokenDetail, _costBrokenDetail, nameBrokenDetail);
         }
 
         public string Name { get; private set; }
 
         public Detail GiveDetail()
         {
-            return _Detail;
+            return _detail;
         }
 
         public void GetNewDetail(Detail detail)
         {
-            _Detail = detail;
+            _detail = detail;
         }
 
         public void ShowInfo()
         {
-            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {_Detail.Name}");
+            Console.WriteLine($"Имя клиента - {Name}, проблема в машине - {_detail.Name}");
         }
     }
 
