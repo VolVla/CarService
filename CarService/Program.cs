@@ -8,12 +8,12 @@ namespace CarService
     {
         static void Main()
         {
-            WorkAutoService workAutoService = new WorkAutoService();
+            AutoService workAutoService = new AutoService();
             workAutoService.WorkService();
         }
     }
 
-    class WorkAutoService
+    class AutoService
     {
         private Queue<Client> _clients = new Queue<Client>();
         private Storage _storage;
@@ -21,7 +21,7 @@ namespace CarService
         private int _punishment;
         private int _money;
 
-        public WorkAutoService()
+        public AutoService()
         {
             _storage = new Storage();
             _money = 1000;
@@ -114,7 +114,7 @@ namespace CarService
                     int costDetail = _storage.PriceDetail(numberDetail);
                     Console.WriteLine($"Цена  детали - {costDetail}, цена ремонта {_priceRepair}");
 
-                    if (autoClient.GiveDetail().Name == _storage.GetDetail(numberDetail).Name)
+                    if (autoClient.GiveDetail().Name == _storage.GetDetail(numberDetail).NameBroken)
                     {
                         autoClient.GetNewDetail(_storage.GetDetail(numberDetail));
                         int amountCost = _priceRepair + costDetail;
@@ -146,44 +146,27 @@ namespace CarService
 
         private void CreateClient()
         {
-            List<Detail> details = new List<Detail>()
-            {
-                new Detail("Стекло",0),
-                new Detail("Фары",0),
-                new Detail("Поворотники",0),
-                new Detail("Шины", 0),
-                new Detail("Замок",0)
-            };
-            List<string> nameBrokenDetails = new List<string>()
-            {
-                "Сломано Лобовое Окно",
-                "Разбита одна Фара",
-                "Отломались Поворотники",
-                "Проколоты Шины",
-                "Дверь пытались взломать сломали Замок"
-            };
             Random random = new Random();
             List<string> namesClients = new List<string>() { "Саня", "Вова", "Артем", "Вика", "Аня" };
             string nameClient = namesClients[random.Next(namesClients.Count)];
-            int numberDetail = random.Next(details.Count);
-            _clients.Enqueue(new Client(nameClient, details[numberDetail], nameBrokenDetails[numberDetail]));
+            int numberDetail = random.Next(_storage.AmountDetails());
+            _clients.Enqueue(new Client(nameClient, _storage.GetNameBrokenDetail(numberDetail)));
         }
     }
 
     class Client
     {
         private Detail _Detail;
+        private int _costBrokenDetail;
 
-        public Client(string name, Detail detail, string nameProblemDetail)
+        public Client(string name, string nameBrokenDetail)
         {
+            _costBrokenDetail = 0;
             Name = name;
-            _Detail = detail;
-            ProblemDetail = nameProblemDetail;
-            _Detail.SetCorrectDetail(false);
+            _Detail = new Detail(nameBrokenDetail, _costBrokenDetail, nameBrokenDetail);
         }
 
         public string Name { get; private set; }
-        public string ProblemDetail { get; private set; }
 
         public Detail GiveDetail()
         {
@@ -204,17 +187,31 @@ namespace CarService
     class Storage
     {
         private List<Detail> _details;
+        private List<string> _nameBrokenDetails;
 
         public Storage()
         {
+            _nameBrokenDetails = new List<string>()
+            {
+                "Сломано Лобовое Окно",
+                "Разбита одна Фара",
+                "Отломались Поворотники",
+                "Проколоты Шины",
+                "Дверь пытались взломать сломали Замок"
+            };
             _details = new List<Detail>()
             {
-                new Detail("Стекло",100),
-                new Detail("Фары",20),
-                new Detail("Поворотники",40),
-                new Detail("Шины", 120),
-                new Detail("Замок",50)
+                new Detail("Стекло",100,_nameBrokenDetails[0]),
+                new Detail("Фары",20, _nameBrokenDetails[1]),
+                new Detail("Поворотники",40, _nameBrokenDetails[2]),
+                new Detail("Шины", 120, _nameBrokenDetails[3]),
+                new Detail("Замок",50, _nameBrokenDetails[4])
             };
+        }
+
+        public string GetNameBrokenDetail(int numberDetail)
+        {
+            return _nameBrokenDetails[numberDetail];
         }
 
         public void ShowDetails()
@@ -255,20 +252,15 @@ namespace CarService
 
     class Detail
     {
-        private bool _isCorrectDetail = true;
-
-        public Detail(string name, int cost)
+        public Detail(string name, int cost, string nameBroken)
         {
             Name = name;
             Cost = cost;
+            NameBroken = nameBroken;
         }
 
+        public string NameBroken { get; private set; }
         public string Name { get; private set; }
         public int Cost { get; private set; }
-
-        public void SetCorrectDetail(bool isCorrectDetail)
-        {
-            _isCorrectDetail = isCorrectDetail;
-        }
     }
 }
